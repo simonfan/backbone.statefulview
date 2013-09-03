@@ -15,12 +15,87 @@
 	</script>
 
 	<script type="text/javascript" data-main="main.js" src="components/requirejs/require.js"></script>
+
+	<style type="text/css">
+
+		.drop {
+			width: 400px;
+
+			background-color: #efefef;
+		}
+
+		.drop a {
+			display: block;
+		}
+
+		.drop-frame {
+			height: 0;
+			opacity: 0;
+			overflow: hidden;
+
+			background-color: #ccc;
+		}
+
+		.drop-frame ul {
+			margin: 0 0;
+		}
+
+
+		/**
+		 * Pages
+		 */
+		#app .nav li:hover {
+			background-color: #efefef;
+			cursor: pointer;
+		}
+		
+		#app .pages li {
+			display: none;
+			opacity: 0;
+		}
+	</style>
 	
 </head>
 
 <body>	
 
 	This is index.html, running demo, using the component.css stylesheet.
+
+	<div class="drop">
+		<a href="#">Items</a>
+		<div class="drop-frame">
+			<ul>
+				<li>Item 1</li>
+				<li>Item 2</li>
+				<li>Item 3</li>
+				<li>Item 4</li>
+				<li>Item 5</li>
+			</ul>
+		</div>
+	</div>
+
+
+
+
+	<br>
+	<br>
+	<br>
+
+
+	<div id="app">
+		<ul class="nav">
+			<li>home</li>
+			<li>page1</li>
+			<li>page2</li>
+		</ul>
+
+		<ul class="pages">
+			<li id="home">home content</li>
+			<li id="page1">page1 content</li>
+			<li id="page2">page2 content</li>
+		</ul>
+	</div>
+
 
 	<br>
 	<a href="tests.html">Go to unit tests</a>
