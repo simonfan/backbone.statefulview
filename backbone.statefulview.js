@@ -60,7 +60,9 @@ define(['backbone','jquery','underscore','_.asynch'], function(Backbone, $, unde
 		 */
 		states: {},
 
-
+		/**
+		 * Scenes are aggregate states
+		 */
 		scenes: {},
 
 
@@ -70,7 +72,30 @@ define(['backbone','jquery','underscore','_.asynch'], function(Backbone, $, unde
 		 * 
 		 */
 		flow: function(sequence, options) {
+
+			/**
+			 * Verify current state against destination state.
+			 */
+			var destination = _.last(sequence),
+				sceneData = this.sceneData;
+
+			if (destination === sceneData.current || destination === sceneData.next) {
+
+			/*
+				console.log('destination: ' + destination);
+				console.log('current: ' + sceneData.current);
+				console.log('next: ' + sceneData.next);
+
+				if (destination === sceneData.next) {
+					console.log('next!')
+				}
+			*/
+				return sceneData.promise;
+			}
+
+
 			var _this = this,
+				// build scene functions.
 				sequence = _.map(sequence, function(sceneName) {
 					return _.bind( _.partial( _this.scene, sceneName , options ), _this );
 				});

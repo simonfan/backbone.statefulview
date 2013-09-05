@@ -119,8 +119,7 @@ define(['backbone.statefulview'], function(StatefulView) {
 			var $target = $(e.currentTarget),
 				route = $target.attr('data-route');
 
-			this.fadeOut()
-				.then(this[route]);
+			this.flow(['fadeOut', route]);
 		},
 
 		states: {
