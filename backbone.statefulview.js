@@ -5,19 +5,53 @@ define(['backbone','jquery'], function(Backbone, $) {
 			/**
 			 * bind methods
 			 */
-			_.bindAll(this,'_exec','_execAnimation','_execFunction','state','_state','_parseAnimation','_iniTransition','_endTransition');
+			// scene related
+			_.bindAll(this,'scene','_iniSceneTransition','_endSceneTransition');
 
-
-			this.onTransition = false;
-
-			this.lastState = undefined;
-			this.currentState = undefined;
-			this.nextState = undefined;
+			// state related
+			_.bindAll(this,'state','_execState','_execStateStep');
 
 			/**
-			 * The animation promise
+			 * Object with data about the view's scene.
 			 */
-			this.promise = $.when(true);
+			this.sceneData = {
+				current: undefined,
+				next: undefined,
+				prev: undefined,
+
+				// scene transition promise
+				promise: $.when(true),
+			}
+
+			/**
+			 * Map state methods
+			 */
+			if (options.mapStateMethods) {
+				var _this = this;
+				_.each(this.states, function(stateObj, stateName) {
+					if (typeof _this[ stateName ] !== 'undefined') {
+						throw new Error('State Method Map Error: property ' + stateName + ' is already defined.')
+					}
+
+					_this[ stateName ] = _.bind(_.partial( _this.state, stateName ), this);
+				})
+			}
+
+			/**
+			 * Map scenes (this.scenes) to methods
+			 * ON conflict of mapped state methods and scene methods
+			 * scene methods have priority.
+			 */
+			if (options.mapSceneMethods) {
+				var _this = this;
+				_.each(this.scenes, function(sceneObj, sceneName) {
+					if (typeof _this[ sceneName ] !== 'undefined') {
+						throw new Error('Scene Method Map Error: property ' + sceneName + ' is already defined.')
+					}
+
+					_this[ sceneName ] = _.bind(_.partial( _this.scene, sceneName ), this);
+				})
+			}
 		},
 
 		/**
@@ -27,105 +61,228 @@ define(['backbone','jquery'], function(Backbone, $) {
 		states: {},
 
 
-		_iniTransition: function(to) {
-			this.onTransition = true;
+		scenes: {},
 
-			// transfer current to last
-			this.lastState = this.currentState;
-
-			// current is undefined
-			this.currentState = undefined;
-
-			// next is to
-			this.nextState = to;
-		},
-
-		_endTransition: function(to) {
-			this.onTransition = false;
-
-			// save current
-			this.currentState = to;
-			this.nextState = undefined;
-		},
 
 		/**
-		 * Changes the view's state to the required one.
+		 * 
+		 * Flow related logic
+		 * 
 		 */
-		state: function(statename, options) {
+		flow: function(sequence, options) {
+			
+		},
 
-			/**
-			 * check if the required state isn't the same as the
-			 * current destination
-			 * if so, just return the promise.
-			 */
-			if (statename === this.nextState) {
-				return this.promise;
+
+		/**
+		 * 
+		 * Scene related logic.
+		 * 
+		 */
+
+		/**
+		 * Transitates the view to a given scene.
+		 */
+		scene: function(sceneName, options) {
+
+			// check if the required scene is the one that 
+			// the view is at or going to.
+			var sceneData = this.sceneData;
+			if (sceneData.current === sceneName || sceneData.next === sceneName) {
+				return sceneData.promise;
 			}
 
 			var _this = this,
-				defers = [];
+				scene = this._getScene(sceneName),
+				// array of deferred objects that represent each of the scene's
+				// state transitions
+				defers = _.map(scene, function(stateNameList, selector) {
+						// main is a special selector:
+						// it refers to the view's own $el.
+					var $el = selector === 'main' ? _this.$el : _this.$el.find(selector);
 
-			// sets meta data about the transition
-			this._iniTransition(statename);
-
-			/**
-			 * Get the main state object
-			 */
-			var mainStateObj = this.states[ statename ] || this[ statename ];
-
-			if (typeof mainStateObj !== 'object') { throw new Error('State ' + statename + ' is not correctly defined.'); }
-
-			// run the main state transition
-			defers.push( this._state(this.$el, mainStateObj, options) );
-
-			/**
-			 * set inner element states
-			 */
-			var innerStateObjs = mainStateObj.inner;
-			if (innerStateObjs) {
-
-				_.each(innerStateObjs, function(stateObj, selector) {
-					var $innerEl = _this.$el.find( selector ),
-						innerStateDefer = _this._state($innerEl, stateObj, options);
-
-					defers.push(innerStateDefer);
+					return _this.state($el, stateNameList, options);
 				});
-			}
 
-			/**
-			 * the overall defer object that waits for all transitions to be done
-			 * save it.
-			 */
-			var stateDefer = this.promise = $.when.apply(null, defers);
+			// run!
+			var exec = $.when.apply(null, defers);
 
-			// finalize the transition
-			stateDefer.then(_.partial( _this._endTransition, statename) );
 
-			return stateDefer;
+			// set scene data, use exec defer as promise
+			this._iniSceneTransition(sceneName, exec);
+
+			// when exec is resolved, finalize the scene transition
+			exec.then(_.partial( this._endSceneTransition, sceneName ));
+
+			// return the exec defer
+			return exec;
 		},
 
 		/**
-		 * Transitates a single element to a state
-		 * takes the $el on which to perform state change and the stateObject 
+		 * Parses the scene name and returns the scene object.
 		 */
-		_state: function($el, stateObj, options) {
+		_getScene: function(sceneName) {
 
-			var options = _.extend(options, stateObj['options']),
+
+			if (typeof sceneName !== 'string') {
+				// sceneName probably actually an object
+				return sceneName;
+
+			} else if (this.scenes[ sceneName ]) {
+				// the scene is defined
+				return this.scenes[ sceneName ];
+
+			} else if (sceneName.split('->').length === 2) {
+				// sceneName is a composition
+				var split = sceneName.split('->'),
+					selector = split[0],
+					state = split[1],
+					scene = {};
+
+				scene[ selector ] = state;
+
+				return scene;
+			}
+		},
+
+		_iniSceneTransition: function(to, promise) {
+
+			var sceneData = this.sceneData || {};
+
+			sceneData.next = to;
+			sceneData.prev = sceneData.current;
+			sceneData.current = undefined;
+
+			sceneData.promise = promise;
+
+			this.sceneData = sceneData;
+		},
+
+		_endSceneTransition: function(to) {
+			var sceneData = this.sceneData;
+
+			sceneData.next = undefined;
+			sceneData.current = to;
+
+			this.sceneData = sceneData;
+		},
+
+
+
+		/**
+		 * 
+		 * State related logic.
+		 * 
+		 */
+
+
+		/**
+		 * Transitates a single element to a state
+		 */
+		state: function($el, stateNameList, options) {
+
+			// if the $el argument is a string,
+			// use the main $el as the $el.
+			if (typeof $el === 'string') {
+				var options = stateNameList,
+					stateNameList = $el,
+					$el = this.$el;
+			}
+
+
+
+				// normalize stateNameList to array format.
+			var stateNameList = _.isArray(stateNameList) ? stateNameList : [stateNameList],
+				// $el's current state.
+				elState = $el.data('state') || {
+					current: undefined,
+					next: undefined,
+					prev: undefined,
+
+					promise: $.when(true),
+				};
+
+			// if the el is already on the required state or its next state is the required one
+			// return true for immediate promise resolution
+			if ( _.difference(stateNameList, elState.current).length === 0 || _.difference(stateNameList, elState.next).length === 0 ) {
+				return elState.promise;
+			}
+
+
+			// run the state
+			var _this = this,
+				// build array of state execution defer objects
+				stateExecDefers = _.map(stateNameList, function(stateName) {
+					return _this._execState($el, stateName, options);
+				}),
+
+				// the main defer, resolved only when all sub defers are solved.
+				exec = $.when.apply(null, stateExecDefers);
+
+			// initialize the state transition, pass exec as promise
+			this._iniStateTransition($el, stateNameList, exec);
+
+			// when the exec defer is resolved, finalize the state transition
+			exec.then(_.partial( this._endStateTransition, $el, stateNameList ));
+
+			// return the exec defer.
+			return exec;
+		},
+
+		_iniStateTransition: function($el, to, promise) {
+				// get the state data object.
+			var elState = $el.data('state') || {};
+
+			elState.next = to;
+			elState.prev = elState.current;
+			elState.current = undefined;
+
+			elState.promise = promise;
+
+			// save the data object
+			$el.data('state', elState);
+		},
+
+		_endStateTransition: function($el, to) {
+			var elState = $el.data('state') || {};
+
+			elState.next = undefined;
+			elState.current = to;
+
+			$el.data('state', elState);
+		},
+
+
+
+
+		/**
+		 * Runs logic for a single state
+		 */
+		_execState: function($el, stateName, options) {
+
+			// get the state object
+			var stateObj = this.states[ stateName ];
+
+			if (!stateObj) { throw new Error('State ' + stateName + ' is not defined.') }
+
+			var options = _.extend({}, stateObj['options'], options),
 
 				// partial execution functions
-				before = _.partial(this._exec, 'before', $el, stateObj['before'], options),
-				state = _.partial(this._exec, 'state', $el, stateObj['state'], options),
-				after = _.partial(this._exec, 'after', $el, stateObj['after'], options);
+				before = _.partial(this._execStateStep, 'before', $el, stateObj['before'], options),
+				state = _.partial(this._execStateStep, 'state', $el, stateObj['state'], options),
+				after = _.partial(this._execStateStep, 'after', $el, stateObj['after'], options);
 
 			// Run!
 			return before().then(state).then(after);
 		},
 
+
+
 		/**
 		 * Runs the 'before','after' AND 'state' steps
 		 * behaves accordingly
 		 */
-		_exec: function(steptype, $el, step, options) {
+		_execStateStep: function(steptype, $el, step, options) {
 
 			// var that holds the execution
 			var exec = true;
@@ -160,10 +317,7 @@ define(['backbone','jquery'], function(Backbone, $) {
 		 * and returns a $.Deferred object.
 		 */
 		_execAnimation: function($el, animation, options) {
-
-			console.log('animation');
-			console.log(animation)
-
+			// parse the animation
 			animation = this._parseAnimation($el, animation);
 
 			return $el.stop().animate(animation, options);
