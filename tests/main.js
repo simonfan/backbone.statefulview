@@ -7,6 +7,8 @@ require.config({
 		'underscore': 'components/underscore/underscore',
 		'backbone': 'components/backbone/backbone',
 
+		'_.asynch': 'components/_.asynch/_.asynch',
+
 		// the module files go here
 		'backbone.statefulview': '../backbone.statefulview',
 

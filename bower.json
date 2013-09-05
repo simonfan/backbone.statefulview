@@ -5,7 +5,8 @@
     "requirejs": "~2.1.8",
     "backbone": "~1.0.0",
     "jquery": "~2.0.3",
-    "underscore": "~1.5.1"
+    "underscore": "~1.5.1",
+    "_.asynch": "simonfan/_.asynch"
   },
   "main": "backbone.statefulview.js"
 }

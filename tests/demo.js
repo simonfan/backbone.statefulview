@@ -100,8 +100,10 @@ define(['backbone.statefulview'], function(StatefulView) {
 	});
 
 
-	drop.scene('.drop-frame->open', { duration: 1000 }).then(function() { console.log('asdasdasd') });
+//	drop.scene('.drop-frame->open', { duration: 1000 }).then(function() { console.log('asdasdasd') });
 
+
+	drop.flow(['open','closed','open']);
 
 
 

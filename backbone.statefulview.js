@@ -1,4 +1,4 @@
-define(['backbone','jquery'], function(Backbone, $) {
+define(['backbone','jquery','underscore','_.asynch'], function(Backbone, $, undef, undef) {
 
 	var StatefulView = Backbone.View.extend({
 		initialize: function(options) {
@@ -70,7 +70,12 @@ define(['backbone','jquery'], function(Backbone, $) {
 		 * 
 		 */
 		flow: function(sequence, options) {
-			
+			var _this = this,
+				sequence = _.map(sequence, function(sceneName) {
+					return _.bind( _.partial( _this.scene, sceneName , options ), _this );
+				});
+
+			return _.asynch.apply(this, sequence);
 		},
 
 
