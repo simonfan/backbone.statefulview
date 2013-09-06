@@ -149,6 +149,24 @@ define(['backbone.statefulview'], function(StatefulView) {
 					opacity: 0.5,
 				},
 			},
+
+			blue: {
+				before: {
+					backgroundColor: 'blue',
+				}
+			},
+
+			red: {
+				before: {
+					backgroundColor: 'red',
+				}
+			},
+
+			purple: {
+				before: {
+					backgroundColor: 'purple',
+				}
+			}
 		},
 
 
@@ -169,9 +187,10 @@ define(['backbone.statefulview'], function(StatefulView) {
 				'#page2': 'hide',
 			},
 			page2: {
+				'main': 'red',
 				'#home': 'hide',
 				'#page1': 'hide',
-				'#page2': 'show',
+				'#page2': ['show','purple'],
 			}
 		}
 	});
@@ -183,5 +202,5 @@ define(['backbone.statefulview'], function(StatefulView) {
 	});
 
 
-	app.page2();
+	app.page1();
 });

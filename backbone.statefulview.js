@@ -1,6 +1,16 @@
 define(['backbone','jquery','underscore','_.asynch'], function(Backbone, $, undef, undef) {
 
 	var StatefulView = Backbone.View.extend({
+
+
+		/**
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 */
+
 		initialize: function(options) {
 			/**
 			 * bind methods
@@ -80,16 +90,6 @@ define(['backbone','jquery','underscore','_.asynch'], function(Backbone, $, unde
 				sceneData = this.sceneData;
 
 			if (destination === sceneData.current || destination === sceneData.next) {
-
-			/*
-				console.log('destination: ' + destination);
-				console.log('current: ' + sceneData.current);
-				console.log('next: ' + sceneData.next);
-
-				if (destination === sceneData.next) {
-					console.log('next!')
-				}
-			*/
 				return sceneData.promise;
 			}
 
