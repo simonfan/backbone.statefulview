@@ -77,9 +77,7 @@ define(['backbone','jquery','underscore','_.asynch'], function(Backbone, $, unde
 
 
 		/**
-		 * 
 		 * Flow related logic
-		 * 
 		 */
 		flow: function(sequence, options) {
 
