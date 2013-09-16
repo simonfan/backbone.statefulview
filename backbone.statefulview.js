@@ -70,10 +70,18 @@ define(['backbone','jquery','underscore','_.asynch'], function(Backbone, $, unde
 		 */
 		states: {},
 
+		extendStates: function(states) {
+
+		},
+
 		/**
 		 * Scenes are aggregate states
 		 */
 		scenes: {},
+
+		extendScenes: function(scenes) {
+			
+		},
 
 
 		/**
@@ -288,20 +296,34 @@ define(['backbone','jquery','underscore','_.asynch'], function(Backbone, $, unde
 		 */
 		_execState: function($el, stateName, options) {
 
-			// get the state object
-			var stateObj = this.states[ stateName ];
+			/**
+			 * $el may be either a single html element, or multiple
+			 */
+			if ($el.length === 1) {
+				// get the state object
+				var stateObj = this.states[ stateName ];
 
-			if (!stateObj) { throw new Error('State ' + stateName + ' is not defined.') }
+				if (!stateObj) { throw new Error('State ' + stateName + ' is not defined.') }
 
-			var options = _.extend({}, stateObj['options'], options),
+				var options = _.extend({}, stateObj['options'], options),
 
-				// partial execution functions
-				before = _.partial(this._execStateStep, 'before', $el, stateObj['before'], options),
-				state = _.partial(this._execStateStep, 'state', $el, stateObj['state'], options),
-				after = _.partial(this._execStateStep, 'after', $el, stateObj['after'], options);
+					// partial execution functions
+					before = _.partial(this._execStateStep, 'before', $el, stateObj['before'], options),
+					state = _.partial(this._execStateStep, 'state', $el, stateObj['state'], options),
+					after = _.partial(this._execStateStep, 'after', $el, stateObj['after'], options);
 
-			// Run!
-			return before().then(state).then(after);
+				// Run!
+				return before().then(state).then(after);
+
+			} else {
+
+				var _this = this,
+					defers = _.map($el, function(el) {
+						return _this._execState($(el), stateName, options);
+					});
+
+				return $.when.apply(null, defers);
+			}
 		},
 
 
