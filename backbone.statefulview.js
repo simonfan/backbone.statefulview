@@ -2,7 +2,10 @@ define(['backbone','jquery','underscore','_.asynch'], function(Backbone, $, unde
 
 	var StatefulView = Backbone.View.extend({
 
-
+		/**
+		 * Selectors that should return the view's main element
+		 */
+		rootSelector: ['.','root'],
 		/**
 		 * 
 		 * 
@@ -119,12 +122,12 @@ define(['backbone','jquery','underscore','_.asynch'], function(Backbone, $, unde
 		/**
 		 * Transitates the view to a given scene.
 		 */
-		scene: function(sceneName, options) {
+		scene: function(sceneName, options, insist) {
 
 			// check if the required scene is the one that 
 			// the view is at or going to.
 			var sceneData = this.sceneData;
-			if (sceneData.current === sceneName || sceneData.next === sceneName) {
+			if ((sceneData.current === sceneName || sceneData.next === sceneName) && !insist) {
 				return sceneData.promise;
 			}
 
@@ -135,7 +138,7 @@ define(['backbone','jquery','underscore','_.asynch'], function(Backbone, $, unde
 				defers = _.map(scene, function(stateNameList, selector) {
 						// main is a special selector:
 						// it refers to the view's own $el.
-					var $el = selector === 'main' ? _this.$el : _this.$el.find(selector);
+					var $el = _.indexOf(_this.rootSelector, selector) !== -1 ? _this.$el : _this.$el.find(selector);
 
 					return _this.state($el, stateNameList, options);
 				});
@@ -215,7 +218,7 @@ define(['backbone','jquery','underscore','_.asynch'], function(Backbone, $, unde
 		/**
 		 * Transitates a single element to a state
 		 */
-		state: function($el, stateNameList, options) {
+		state: function($el, stateNameList, options, insist) {
 
 			// if the $el argument is a string,
 			// use the main $el as the $el.
@@ -240,7 +243,7 @@ define(['backbone','jquery','underscore','_.asynch'], function(Backbone, $, unde
 
 			// if the el is already on the required state or its next state is the required one
 			// return true for immediate promise resolution
-			if ( _.difference(stateNameList, elState.current).length === 0 || _.difference(stateNameList, elState.next).length === 0 ) {
+			if ( (_.difference(stateNameList, elState.current).length === 0 || _.difference(stateNameList, elState.next).length === 0) && !insist ) {
 				return elState.promise;
 			}
 

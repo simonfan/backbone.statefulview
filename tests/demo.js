@@ -79,14 +79,14 @@ define(['backbone.statefulview'], function(StatefulView) {
 
 		scenes: {
 			open: {
-				// main is a special element, it refers to the view's $el itself.
-				'main': 'red',
+				// 'root' or '.' is a special element, it refers to the view's $el itself.
+				'.': 'red',
 
 				// other properties are simple jquery selectors
 				'.drop-frame': ['open','blue'],
 			},
 			closed: {
-				'main': 'green',
+				'root': 'green',
 				'.drop-frame': ['closed','clearColor'],
 			}
 		}
@@ -187,7 +187,7 @@ define(['backbone.statefulview'], function(StatefulView) {
 				'#page2': 'hide',
 			},
 			page2: {
-				'main': 'red',
+				'.': 'red',
 				'#home': 'hide',
 				'#page1': 'hide',
 				'#page2': ['show','purple'],
