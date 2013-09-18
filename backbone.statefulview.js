@@ -140,7 +140,7 @@ define(['backbone','jquery','underscore','_.asynch'], function(Backbone, $, unde
 						// it refers to the view's own $el.
 					var $el = _.indexOf(_this.rootSelector, selector) !== -1 ? _this.$el : _this.$el.find(selector);
 
-					return _this.state($el, stateNameList, options);
+					return _this.state($el, stateNameList, options, insist);
 				});
 
 			// run!
